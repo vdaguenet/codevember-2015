@@ -12,6 +12,7 @@ export default class ParticleContainer {
     this.slice = 0;
     this.sliceTo = 2 * Math.PI / this.nbParticle;
     this.speed = 0;
+    this.dir = 1;
 
     this.populate();
   }
@@ -30,6 +31,7 @@ export default class ParticleContainer {
       p = new Particle(x, y, 8);
       p.color = '#fff';
       this.pool.push(p);
+      this.angles.push(angle);
     }
   }
 
@@ -39,13 +41,20 @@ export default class ParticleContainer {
   }
 
   update(context, tick) {
-    let angle;
-    this.slice = lerp(-Math.sin(tick * 0.8), 0, this.sliceTo);
+    if (this.slice >= this.sliceTo - 0.001 && this.dir === 1 && tick > 0.5) {
+      this.dir = -1;
+    }
+
+    if (this.slice <= 0.01 && this.slice >= -0.01 && this.dir === -1) {
+      this.dir = 1;
+    }
+
+    this.slice = lerp(this.dir * Math.abs(Math.sin(tick * 0.8)), 0, this.sliceTo);
 
     this.pool.forEach((particle, i) => {
-      angle = this.slice * i;
-      particle.position.x = 0.5 * this.width + Math.cos(angle) * this.radius;
-      particle.position.y = 0.5 * this.height + Math.sin(angle) * this.radius;
+      this.angles[i] = this.slice * i;
+      particle.position.x = 0.5 * this.width + Math.cos(this.angles[i]) * this.radius;
+      particle.position.y = 0.5 * this.height + Math.sin(this.angles[i]) * this.radius;
 
       particle.update();
       particle.draw(context);
