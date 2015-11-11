@@ -1,0 +1,34 @@
+{
+  "name": "canvas-starter-kit",
+  "version": "1.0.0",
+  "description": "Starter for canvas experiments",
+  "main": "app/index.js",
+  "scripts": {
+    "start": "npm run dev",
+    "dev": "budo app/index.js:build/main.js --dir ./public --live --open -- -t babelify",
+    "build": "browserify -t babelify -t stripify app/index.js | uglifyjs -o public/build/main.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vdaguenet/canvas-starter-kit.git"
+  },
+  "author": "Valentin Daguenet <valentin.daguenet@gmail.com> (http://vdaguenet.fr)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/vdaguenet/canvas-starter-kit/issues"
+  },
+  "homepage": "https://github.com/vdaguenet/canvas-starter-kit#readme",
+  "devDependencies": {
+    "babel-plugin-transform-es2015-modules-commonjs": "*",
+    "babel-preset-es2015": "*",
+    "babelify": "*",
+    "browserify": "*",
+    "budo": "*",
+    "stripify": "*",
+    "uglifyjs": "*"
+  },
+  "dependencies": {
+    "dat-gui": "*",
+    "raf": "*"
+  }
+}
