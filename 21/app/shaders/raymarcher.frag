@@ -9,15 +9,7 @@ varying vec2 vUv;
 //
 #define PI                3.14159265
 #define NORMAL_EPS        0.001
-// Materials
-#define MTL_BG            -1.0
-#define MTL_BG_COLOR      vec3(0.0, 0.0, 0.0)
-#define MTL_OBJ1          1.0
-#define MTL_OBJ1_COLOR    vec3(1.0, 0.0, 0.0)
-#define MTL_OBJ2          2.0
-#define MTL_OBJ2_COLOR    vec3(0.0, 1.0, 0.0)
-#define MTL_OBJ3          3.0
-#define MTL_OBJ3_COLOR    vec3(0.0, 0.0, 1.0)
+#define SKY_COLOR         vec3(0.9, 0.9, 0.9)
 
 //
 // Raymarching settings
@@ -120,27 +112,39 @@ float bumps(vec3 p) {
 // Build stuffs
 //
 vec2 field(vec3 position) {
-  // ground of balls
-  // pos.x = repeat(pos.x, 1.0);
-  // pos.z = repeat(pos.z, 1.0);
-  vec3 p = position;
-  vec3 p1 = p + vec3(4.0, 0.0, 0.0);
-  vec2 obj1 = vec2(sphere(p1, 1.0));
+  vec3 p = translate(position, vec3(0.0, 2.0, 0.0));
+  // vec3 p = position;
 
-  vec3 p2 = p + vec3(-4.0, 0.0, 0.0);
-  vec2 obj2 = vec2(sphere(p2, 1.0));
+  vec3 pb1 = p + vec3(1.2, -7.0, 0.0);
+  float d1 = sphere(pb1, 1.1);
+  vec2 ball1 = vec2(d1);
 
-  vec3 p3 = p + vec3(0.0, -4.0, 0.0);
-  vec2 obj3 = vec2(sphere(p3, 1.0));
-  // pos = translate(pos, vec3(0.0, -3.0, 0.0));
+  vec3 pb2 = p + vec3(-1.2, -7.0, 0.0);
+  float d2 = sphere(pb2, 1.1);
+  vec2 ball2 = vec2(d2);
 
-  vec2 res = smin(obj1, obj2, 0.1);
-  res = smin(res, obj3, 0.1);
+  vec3 p2 = p + vec3(0.0, -1.0, 0.0);
+  vec2 cylinderHandle = vec2(cylinder(p2, vec2(0.3, 3.0)));
 
-  // apply material colors
-  if (res.x > obj1.x - RAYMARCHING_PRECISION) res.y = MTL_OBJ1;
-  if (res.x > obj2.x - RAYMARCHING_PRECISION) res.y = MTL_OBJ2;
-  if (res.x > obj3.x - RAYMARCHING_PRECISION) res.y = MTL_OBJ3;
+  vec3 p3 = p + vec3(0.0, 3.0, 0.0);
+  vec2 torusBottom = vec2(torus(p3.xzy, 0.85, 0.3));
+
+  vec3 p4 = p + vec3(0.0, -7.0, 0.0);
+  vec2 torusTop = vec2(torus(p4.xzy, 3.0, 0.3));
+  p4.xy = rotate2D(p4.xy, 0.5 * PI);
+  vec2 cylinderTop = vec2(cylinder(p4, vec2(0.3, 3.0)));
+
+  vec2 handle = smin(cylinderHandle, torusBottom, 0.3);
+  handle = smin(handle, torusTop, 0.3);
+  handle = smin(handle, cylinderTop, 0.3);
+
+  vec2 res = smin(handle, ball1, 0.04);
+  res = smin(res, ball2, 0.04);
+
+  res.y = 1.0;
+  if (res.x > ball2.x - RAYMARCHING_PRECISION) res.y = 0.5;
+  if (res.x > ball1.x - RAYMARCHING_PRECISION) res.y = 0.25;
+  if (res.x > handle.x - RAYMARCHING_PRECISION) res.y = 0.0;
 
   return res;
 }
@@ -150,7 +154,7 @@ vec2 field(vec3 position) {
 //
 vec2 raymarching(vec3 origin, vec3 dir) {
   float dist = 0.0;
-  float materialId = MTL_BG;
+  float materialId = -1.0;
   vec2 res = vec2(-1.0, materialId);
 
   for (int i = 0; i < RAYMARCHING_ITERATION; i++) {
@@ -174,16 +178,22 @@ vec2 raymarching(vec3 origin, vec3 dir) {
 // RENDERING
 //
 vec3 getMaterialColor(float matID) {
-    vec3 col = MTL_BG_COLOR;
+    vec3 col = vec3(1.0, 1.0, 1.0);
 
-    if (matID <= MTL_OBJ1) {
-      col = MTL_OBJ1_COLOR;
-    } else if (matID <= MTL_OBJ2) {
-      col = MTL_OBJ2_COLOR;
-    } else if (matID <= MTL_OBJ3) {
-      col = MTL_OBJ3_COLOR;
+    if (matID == 0.0) {
+      // handle
+      col = vec3(0.93, 0.79, 0.32);
     }
 
+    if (matID == 0.25) {
+      // ball left
+      col = vec3(0, 0.63, 0.69);
+    }
+
+    if (matID == 0.5) {
+      // ball right 204,51,63
+      col = vec3(0.8, 0.2, 0.23);
+    }
 
     return col;
 }
@@ -199,44 +209,38 @@ vec3 computeNormal(vec3 pos) {
   ));
 }
 
-float diffuse(vec3 normal, vec3 lightDirection) {
-  // return max(dot(normal, lightDirection), 0.0);
-  // wrap lighting
-  return dot(normal, lightDirection) * 0.5 + 0.5;
-}
-
-float specular(vec3 normal, vec3 dir) {
-  vec3 h = normalize(normal - dir);
-
-  return pow(max(dot(h, normal), 0.0), 100.0);
-}
-
-vec3 fakeLight(vec3 pos, float intensity, vec3 color) {
-  float lightDistance = sphere(pos, 1.0);
-
-  return intensity / (lightDistance * lightDistance) * color;
-}
-
 vec3 applyFog(vec3 col, float dist) {
-    return mix(col, MTL_BG_COLOR, 1.0 - exp(-0.0015*dist*dist));
+    return mix(col, SKY_COLOR, 1.0 - exp(-0.0015*dist*dist));
 }
 
 vec3 render(vec3 rayOrig, vec3 rayDir) {
   vec2 collision = raymarching(rayOrig, rayDir);
-  vec3 pos = rayOrig + rayDir * collision.x;
+  vec3 hitPos = rayOrig + rayDir * collision.x;
   float dist = collision.x;
   float matID = collision.y;
-  vec3 color = MTL_BG_COLOR;
+  vec3 color = SKY_COLOR;
+  vec3 mtlDiffuse = getMaterialColor(matID);
 
-  vec3 lightDirection = normalize(vec3(1.0, 0.6, 0.2));
-  vec3 lightColor = vec3(0.9, 0.9, 0.8);
-
-  vec3 normal = computeNormal(pos);
-  float diff = diffuse(normal, lightDirection);
-  float spec = specular(normal, rayDir);
+  vec3 globalLightDirection =  normalize(vec3(-0.1, 0.3, -1.1));
+  vec3 globalLightColor = vec3(0.8,1.0,0.9);
+  vec3 lightColor = vec3(0.8, 1.0, 0.9);
+  vec3 ambientColor = vec3(0.03, 0.03, 0.03);
+  vec3 specColor = vec3(0.8, 0.90, 0.60);
+  float specPower = 16.0;
 
   if (dist > -0.5) {
-    color = (diff + spec) * lightColor * getMaterialColor(matID);
+    // color = (diff + spec) * lightColor * mtlColor;
+    vec3 normal = computeNormal(hitPos);
+
+    // LAMBERT
+    // float diffuse = clamp(dot(normal, globalLightDirection), 0.0, 1.0);
+    // color = mtlDiffuse*(ambientColor + lightColor * diffuse);
+
+    // PHONG
+    float diffuse = clamp(dot(normal, globalLightDirection), 0.0, 1.0);
+    vec3 ref = reflect(rayDir, normal);
+    float specular = pow(clamp(dot(ref, globalLightDirection), 0.0, 1.0), specPower);
+    color = mtlDiffuse*(ambientColor + lightColor * (diffuse + specular * specColor));
   }
   color = applyFog(color, dist);
 
@@ -245,7 +249,7 @@ vec3 render(vec3 rayOrig, vec3 rayDir) {
 }
 
 void main() {
-  vec3 rayOrigin = vec3(0.0, 4.0, -10.0);
+  vec3 rayOrigin = vec3(0.0, 5.0, -10.0);
   vec3 rayDirection = normalize(vec3(vUv, 1.0));
 
   vec3 color = render(rayOrigin, rayDirection);
