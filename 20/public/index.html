@@ -10,10 +10,33 @@
       margin: 0;
       padding: 0;
       overflow: hidden;
+      font-family: sans-serif;
+    }
+
+    .credits {
+      position: fixed;
+      bottom: 15px;
+      right: 15px;
+      font-size: 1em;
+      opacity: 0.6;
+      z-index: 1;
+      font-size: 0.35em;
+      letter-spacing: 2px;
+      color: #fff;
+    }
+
+    a,
+    a:hover,
+    a:visited {
+      color: #fff;
+      text-decoration: none;
     }
   </style>
 </head>
 <body>
+  <div class="credits">
+    An experiment by <a href="https://twitter.com/vdaguenet" target="_blank">@vdaguenet</a><br>
+  </div>
   <script src="./build/main.js"></script>
 </body>
 </html>
