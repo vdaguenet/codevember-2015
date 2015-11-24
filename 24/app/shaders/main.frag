@@ -1,11 +1,7 @@
 #pragma glslify: squareFrame = require('glsl-square-frame')
 #pragma glslify: getRay = require('glsl-camera-ray')
 #pragma glslify: intersectionAB = require('./raymarching/operations/intersection.glsl')
-#pragma glslify: substractionAB = require('./raymarching/operations/substraction.glsl')
-#pragma glslify: unionAB = require('./raymarching/operations/union.glsl')
 #pragma glslify: sphere = require('./raymarching/primitives/sphere.glsl')
-#pragma glslify: roundbox = require('./raymarching/primitives/roundbox.glsl')
-#pragma glslify: cylinder = require('./raymarching/primitives/cylinder.glsl')
 #pragma glslify: plane = require('./raymarching/primitives/plane.glsl')
 
 uniform vec2 resolution;
